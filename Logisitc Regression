@@ -17,7 +17,7 @@ from sklearn.metrics import (
     classification_report
 )
 
-# Set random seed for reproducibility
+
 RANDOM_STATE = 13
 np.random.seed(RANDOM_STATE)
 
@@ -40,7 +40,7 @@ def stratified_bootstrap(X, y, random_state=None):
     sampled_indices = []
 
     for c in classes:
-        idx_c = np.where(y == c)[0]        # row positions
+        idx_c = np.where(y == c)[0]        
         sampled_c = rng.choice(idx_c, size=len(idx_c), replace=True)
         sampled_indices.append(sampled_c)
 
@@ -60,16 +60,14 @@ bootstrap_results = {
     "test AUC": [],
     "train accuracy": [],
     "test accuracy": [],
-    "train probs": [],     # <--- Added
-    "test probs": [],      # <--- Added
-    "test true": []        # <--- Added
+    "train probs": [],     
+    "test probs": [],     
+    "test true": []        
 }
 
 for i in range(n_bootstrap):
-    # 1) Stratified bootstrap 
     X_resampled, y_resampled = stratified_bootstrap(X_boot, y_boot, random_state=i)
 
-    # 2) Train/test split
     X_resampled_train, X_resampled_test, y_resampled_train, y_resampled_test = train_test_split(
         X_resampled,
         y_resampled,
@@ -78,7 +76,6 @@ for i in range(n_bootstrap):
         stratify=y_resampled
     )
 
-    # 3) Pipeline
     pipe = Pipeline([
         ("scaling", StandardScaler()),
         ("pca", PCA(random_state=RANDOM_STATE)),
@@ -91,7 +88,6 @@ for i in range(n_bootstrap):
         ))
     ])
 
-    # 4) Grid search
     param_grid = {
         'classifier__C': [0.001, 0.01, 0.1, 1, 10, 100],
         'pca__n_components': [10, 20, 30, 50, 75, 100]
@@ -113,7 +109,6 @@ for i in range(n_bootstrap):
     best_n_components = clf_cv.best_params_["pca__n_components"]
     best_model = clf_cv.best_estimator_
 
-    # --- Probabilities and metrics ---
     y_train_prob = best_model.predict_proba(X_resampled_train)[:, 1]
     y_train_pred = (y_train_prob > 0.5).astype(int)
     train_acc = accuracy_score(y_resampled_train, y_train_pred)
@@ -149,39 +144,32 @@ import numpy as np
 from sklearn.metrics import roc_curve
 import matplotlib.pyplot as plt
 
-# Collect FPR/TPR values across all bootstraps
-mean_fpr = np.linspace(0, 1, 200)  # fixed grid for interpolation
+
+mean_fpr = np.linspace(0, 1, 200)  
 tprs = []
 aucs = []
 
 for y_true, y_prob in zip(bootstrap_results["test true"], bootstrap_results["test probs"]):
     fpr, tpr, _ = roc_curve(y_true, y_prob)
     
-    # Interpolate TPR at common FPR points
     tpr_interp = np.interp(mean_fpr, fpr, tpr)
     tpr_interp[0] = 0.0
     tprs.append(tpr_interp)
 
-# Convert to numpy
 tprs = np.array(tprs)
 
-# Compute mean ROC and 95% CI
 mean_tpr = tprs.mean(axis=0)
 std_tpr = tprs.std(axis=0)
 
-# 95% confidence interval
 tpr_upper = np.minimum(mean_tpr + 1.96 * std_tpr, 1)
 tpr_lower = np.maximum(mean_tpr - 1.96 * std_tpr, 0)
 
-# Final mean AUC
 from sklearn.metrics import roc_auc_score
 mean_auc = np.mean(bootstrap_results["test AUC"])
 std_auc = np.std(bootstrap_results["test AUC"])
 
-# --- Plot ---
 plt.figure(figsize=(8, 6))
 
-# CI band
 plt.fill_between(
     mean_fpr,
     tpr_lower,
@@ -190,7 +178,6 @@ plt.fill_between(
     label='95% Confidence Interval'
 )
 
-# Mean ROC curve
 plt.plot(
     mean_fpr,
     mean_tpr,
@@ -198,7 +185,6 @@ plt.plot(
     label=f"Mean ROC (AUC = {mean_auc:.3f} ± {std_auc:.3f})"
 )
 
-# Diagonal line
 plt.plot([0, 1], [0, 1], linestyle='--', color='grey')
 
 plt.xlabel("False Positive Rate", fontsize = 13)
@@ -212,4 +198,3 @@ plt.show()
 
 #################################################################
 
-#################################################################
