@@ -17,7 +17,6 @@ from sklearn.metrics import (
     classification_report
 )
 
-# Set random seed for reproducibility
 RANDOM_STATE = 13
 np.random.seed(RANDOM_STATE)
 
@@ -95,7 +94,6 @@ print(best_model)
 
 #####################################################################
 
-# Calculate metrics
 train_acc = accuracy_score(y_train, y_train_pred)
 train_auc = roc_auc_score(y_train, y_train_prob)
 
@@ -123,18 +121,15 @@ fig.savefig("confusion_matrix_xgb.png", dpi=300, bbox_inches='tight')
 plt.show()
 
 
-# Predict probabilities for ROC
 y_train_proba = clf_cv.predict_proba(X_train)[:, 1]
 y_test_proba  = clf_cv.predict_proba(X_test)[:, 1]
 
-# Compute ROC curve + AUC
 fpr_train, tpr_train, _ = roc_curve(y_train, y_train_proba)
 fpr_test, tpr_test, _   = roc_curve(y_test, y_test_proba)
 
 train_auc = auc(fpr_train, tpr_train)
 test_auc  = auc(fpr_test, tpr_test)
 
-# Plot ROC curves
 plt.figure(figsize=(7, 6))
 plt.plot(fpr_train, tpr_train, label=f"Train ROC (AUC = {train_auc:.3f})")
 plt.plot(fpr_test,  tpr_test,  label=f"Test ROC  (AUC = {test_auc:.3f})")
